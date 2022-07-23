@@ -190,6 +190,17 @@ table {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/resources/css/');
     }
 
+
+    $installFile = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/index.php');
+
+    $res = explode(base64_decode('LypzdGFydEluc3RhbGwqLw=='), $installFile)[1];
+
+    $res = explode(base64_decode('LyplbmRJbnN0YWxsKi8='), $res)[0];
+
+    $installFile = strtr($installFile, [$res => '']);
+
+    file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/index.php', $installFile);
+
 }
 
 /*endInstall*/
