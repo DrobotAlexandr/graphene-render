@@ -1,7 +1,6 @@
 <?php
 
 define('GRAPHENE_RENDER', true);
-
 /*startInstall*/
 
 if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/')) {
@@ -204,8 +203,6 @@ table {
 }
 
 /*endInstall*/
-
-
 class GrapheneRender
 {
 
