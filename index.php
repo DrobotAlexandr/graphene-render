@@ -197,7 +197,7 @@ table {
 
     $res = explode(base64_decode('LyplbmRJbnN0YWxsKi8='), $res)[0];
 
-    $installFile = strtr($installFile, [$res => '']);
+    $installFile = strtr($installFile, [$res => '', base64_decode('LypzdGFydEluc3RhbGwqLw==') => '', base64_decode('LyplbmRJbnN0YWxsKi8=') => '']);
 
     file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/index.php', $installFile);
 
