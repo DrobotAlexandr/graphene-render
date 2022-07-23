@@ -80,6 +80,7 @@ defined(\'GRAPHENE_RENDER\') or die;
 
 import(\'/basic-view/resources/extensions/reset/reset.css\');
 import(\'/basic-view/resources/fonts/fonts.css\');
+import(\'/basic-view/resources/css/ui.css\');
 import(\'/basic-view/App.css\');
 import(\'/basic-view/App.js\');
 
@@ -121,6 +122,10 @@ import(\'/basic-view/App.js\');
     }
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/');
+    }
+    if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/css/')) {
+        mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/css/');
+        file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/css/ui.css', '');
     }
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/fonts/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/fonts/');
@@ -203,6 +208,7 @@ table {
 }
 
 /*endInstall*/
+
 class GrapheneRender
 {
 
