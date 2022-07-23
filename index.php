@@ -5,6 +5,12 @@ define('GRAPHENE_RENDER', true);
 
 if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/')) {
     mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/');
+    
+    file_put_contents($_SERVER['DOCUMENT_ROOT'].'/gitignore', '.idea
+graphene-render/cache
+
+');
+    
 
     file_put_contents('router.php', "<?php
 
