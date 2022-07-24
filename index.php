@@ -618,8 +618,8 @@ $data = controller(function () {
 
 <?php extend(\'basic-view\'); ?>
 
-<div class="Contacts">
-    <h1><?= meta(\'h1\') ?></h1>
+<div class="' . $route['code'] . '">
+    <h1><?= h1() ?></h1>
 </div>
 
         ');
