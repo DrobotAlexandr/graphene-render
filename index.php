@@ -1,17 +1,38 @@
 <?php
 
-define('GRAPHENE_RENDER', true);
+const GRAPHENE_RENDER = 1.0;
+
+/*
+ * GRAPHENE-RENDER
+ * Расширение платформы GRAPHENE
+ * Обеспечивает умный рендеринг web-страниц
+ * Работает со статикой css+js
+ * Обеспечивает молниеносную отдачу html благодаря статическому пре-рендеру
+ */
+
+$app = new GrapheneRender();
+
+$app->extractPageFromCache();
+
+$app->render();
+
+$app->saveHtmlCache();
+
+$app->saveHtmlCache();
+
 /*startInstall*/
+
+/*
+ * Код для развертывания расширения
+ * После установки код будет удален из расширения
+ * Установка происходит на лету, после запуска index.php
+ */
 
 if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/')) {
     mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/');
-    
-    file_put_contents($_SERVER['DOCUMENT_ROOT'].'/gitignore', '.idea
+    file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/gitignore', '.idea
 graphene-render/cache
-
 ');
-    
-
     file_put_contents('router.php', "<?php
 
 return [
@@ -97,6 +118,7 @@ import(\'/basic-view/App.js\');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= title() ?></title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
 <div class="App">
@@ -136,6 +158,9 @@ import(\'/basic-view/App.js\');
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/fonts/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/fonts/');
         file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/fonts/fonts.css', '');
+    }
+    if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/img/')) {
+        mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/img/');
     }
 
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/')) {
@@ -215,12 +240,25 @@ table {
 
 /*endInstall*/
 
+/*
+ * Основной класс для работы с расширением
+ * Вся работа по сборке и рендеренгу проводится в классе GrapheneRender
+ */
+
 class GrapheneRender
 {
-
     private $route = [];
     private $pageHtml = '';
     private $viewHtml = '';
+    private $htmlCacheKey = '';
+    private $isGrapheneReStaticRequest = false;
+    private $pageVersion = '';
+
+    public function __construct()
+    {
+        $this->checkReStaticRequest();
+        $this->setHtmlCacheKey();
+    }
 
     public function render()
     {
@@ -237,8 +275,128 @@ class GrapheneRender
 
         $this->renderAddCssJs();
 
-        exit($this->viewHtml);
+        $this->versionManager();
 
+        $this->optimizeHtml();
+
+        if (!$this->isReStaticRequest()) {
+            echo $this->viewHtml;
+        }
+
+    }
+
+    private function checkReStaticRequest()
+    {
+        if ($_SERVER['REQUEST_METHOD'] == 'GRAPHENE-RE-STATIC') {
+            $this->isGrapheneReStaticRequest = true;
+        }
+    }
+
+    private function isReStaticRequest()
+    {
+        return $this->isGrapheneReStaticRequest;
+    }
+
+    public function extractPageFromCache()
+    {
+
+        if ($this->isReStaticRequest()) {
+            return false;
+        }
+
+        $cacheKey = $this->getCacheKey();
+
+        $pageCacheFile = $_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/pages/' . $cacheKey . '.php';
+
+        if (file_exists($pageCacheFile)) {
+            include $pageCacheFile;
+            exit(PHP_EOL . PHP_EOL . PHP_EOL . '<!-- graphene-static : ' . $cacheKey . ' -->');
+        }
+    }
+
+    private function setHtmlCacheKey()
+    {
+        $key = explode('?', $_SERVER['REQUEST_URI'])[0];
+
+        $this->htmlCacheKey = md5($key);
+    }
+
+    private function getCacheKey()
+    {
+        return $this->htmlCacheKey;
+    }
+
+    public function saveHtmlCache()
+    {
+
+        if ($this->pageRequestVersion() == $this->pageVersion) {
+            exit($this->pageVersion);
+        }
+
+        if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/pages/')) {
+            mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/pages/');
+        }
+
+        $pageCacheFile = $_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/pages/' . $this->getCacheKey() . '.php';
+
+        $cache = '<?php
+defined(\'GRAPHENE_RENDER\') or die;
+?>
+';
+        $cache .= $this->viewHtml;
+
+        file_put_contents($pageCacheFile, $cache);
+
+        if ($this->isReStaticRequest()) {
+            exit($this->pageVersion);
+        }
+
+    }
+
+    private function optimizeHtml()
+    {
+        $html = $this->viewHtml;
+
+        $this->viewHtml = '';
+
+        foreach (explode(' ', $html) as $string) {
+
+            $string = trim($string);
+            if ($string) {
+                $this->viewHtml .= $string . ' ';
+            }
+        }
+
+        $this->viewHtml = strtr($this->viewHtml,
+            [
+                PHP_EOL => '',
+                '> <' => '><'
+            ]
+        );
+
+        $copy = '<!-- meta name="GENERATOR" content="graphene-render" -->' . PHP_EOL . PHP_EOL . PHP_EOL;
+
+        $this->viewHtml = strtr($this->viewHtml, ['<head>' => '<head><meta name="generator" content="graphene-render">']);
+
+        $this->viewHtml = $copy . $this->viewHtml;
+    }
+
+    private function versionManager()
+    {
+        $version = $this->versionManagerGetVersion();
+
+        $this->pageVersion = $version;
+
+        $this->viewHtml = strtr($this->viewHtml,
+            [
+                '<head>' => "<head><script>let pageVersion='$version';</script>"
+            ]
+        );
+    }
+
+    private function versionManagerGetVersion()
+    {
+        return md5($this->viewHtml);
     }
 
     private function renderAddCssJs()
@@ -246,11 +404,24 @@ class GrapheneRender
 
         if ($this->route['code']) {
 
+            if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/')) {
+                mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/');
+            }
+
+            if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/static/')) {
+                mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/static/');
+            }
+
             $cacheKey = mb_strtolower($this->route['code']);
+
+            $appCssFile = '/graphene-render/cache/static/app.css';
+            $appJsFile = '/graphene-render/cache/static/app.js';
 
             $cssFile = '/graphene-render/cache/static/' . $cacheKey . '.css';
             $jsFile = '/graphene-render/cache/static/' . $cacheKey . '.js';
 
+            $appCss = '';
+            $appJs = $this->renderAddCssJsGetSystemAppJs();
             $css = '';
             $js = '';
 
@@ -276,11 +447,11 @@ class GrapheneRender
                 foreach ($global as $res) {
 
                     if (strstr($res, '.css')) {
-                        $css .= file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/' . $res) . PHP_EOL . PHP_EOL;
+                        $appCss .= file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/' . $res) . PHP_EOL . PHP_EOL;
                     }
 
                     if (strstr($res, '.js')) {
-                        $js .= file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/' . $res) . PHP_EOL . PHP_EOL;
+                        $appJs .= file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/' . $res) . PHP_EOL . PHP_EOL;
                     }
 
                 }
@@ -300,24 +471,54 @@ class GrapheneRender
                 }
             }
 
+            $appCss = trim($appCss);
+            $appJs = trim($appJs);
+
             $css = trim($css);
             $js = trim($js);
+
+            $verAppCss = md5($appCss);
+            $verAppJs = md5($appJs);
 
             $verCss = md5($css);
             $verJs = md5($js);
 
-            file_put_contents($_SERVER['DOCUMENT_ROOT'] . $cssFile, $css);
-            file_put_contents($_SERVER['DOCUMENT_ROOT'] . $jsFile, $js);
+            $staticVersion = md5($verAppCss . $verAppJs . $verCss . $verJs);
 
-            $replace['</head>'] = '    <link type="text/css" rel="stylesheet" href="' . $cssFile . '?ver=' . $verCss . '"/>' . PHP_EOL . '</head>';
-            $replace['</body>'] = '<script type="text/javascript" src="' . $jsFile . '?ver=' . $verJs . '"></script>' . PHP_EOL . '</body>';
+            $replace['</head>'] = '
+            <link data-static-version="' . md5($staticVersion . $verAppCss) . '" type="text/css" rel="stylesheet" href="' . $appCssFile . '?ver=' . $verAppCss . '"/>
+            <link data-static-version="' . md5($staticVersion . $verCss) . '" type="text/css" rel="stylesheet" href="' . $cssFile . '?ver=' . $verCss . '"/>' . PHP_EOL . '</head>';
+
+            $replace['</body>'] = '
+            <script data-static-version="' . md5($staticVersion . $verAppJs) . '" type="text/javascript" src="' . $appJsFile . '?ver=' . $verAppJs . '"></script>
+            <script data-static-version="' . md5($staticVersion . $verJs) . '" type="text/javascript" src="' . $jsFile . '?ver=' . $verJs . '"></script>' . PHP_EOL . '</body>';
+
             $this->viewHtml = strtr(
                 $this->viewHtml,
                 $replace
             );
 
+            if ($this->pageRequestVersion() != $this->versionManagerGetVersion()) {
+
+                file_put_contents($_SERVER['DOCUMENT_ROOT'] . $appCssFile, $appCss);
+                file_put_contents($_SERVER['DOCUMENT_ROOT'] . $appJsFile, $appJs);
+
+                file_put_contents($_SERVER['DOCUMENT_ROOT'] . $cssFile, $css);
+                file_put_contents($_SERVER['DOCUMENT_ROOT'] . $jsFile, $js);
+
+            }
+
         }
 
+    }
+
+    private function pageRequestVersion()
+    {
+        if (!isset($_GET['version'])) {
+            return '';
+        }
+
+        return (string)$_GET['version'];
     }
 
     private function renderView()
@@ -441,6 +642,42 @@ document.addEventListener(\'DOMContentLoaded\', function () {
             }
         }
     }
+
+    private function renderAddCssJsGetSystemAppJs()
+    {
+
+        $js = "
+
+let reStaticUrl = '?version='+pageVersion;   
+      
+if(window.location.search)
+{
+    reStaticUrl = window.location.search+'&version='+pageVersion;   
+}
+        
+fetch(new Request(reStaticUrl, {method: 'GRAPHENE-RE-STATIC'})).then(data => {
+        
+    data.text().then(version => { 
+        if(pageVersion !== version){
+           window.location.href='';
+        }
+    });
+        
+});";
+        return $js . PHP_EOL . PHP_EOL;
+    }
+}
+
+/*
+ * Дра работы внутри приложения graphene-render,
+ * при разработке используются функции описанные ниже
+ */
+
+function controller($do)
+{
+    $res = $do();
+
+    return $res;
 }
 
 function topMenu()
@@ -455,9 +692,16 @@ function topMenu()
             continue;
         }
 
+        $isActive = false;
+
+        if (explode('?', $_SERVER['REQUEST_URI'])[0] == $route['url']) {
+            $isActive = true;
+        }
+
         $arData[] = [
             'title' => $route['name'],
             'link' => $route['url'],
+            'isActive' => $isActive
         ];
     }
 
@@ -473,12 +717,29 @@ function extend($view = '')
     }
 }
 
+function setMeta($meta)
+{
+    title($meta['title']);
+    description($meta['description']);
+    h1($meta['h1']);
+    $GLOBALS['GRAPHENE_RENDER']['meta'] = $meta;
+}
+
 function title($title = false)
 {
     if ($title) {
         $GLOBALS['GRAPHENE_RENDER']['title'] = $title;
     } else {
         return $GLOBALS['GRAPHENE_RENDER']['title'];
+    }
+}
+
+function h1($h1 = false)
+{
+    if ($h1) {
+        $GLOBALS['GRAPHENE_RENDER']['h1'] = $h1;
+    } else {
+        return $GLOBALS['GRAPHENE_RENDER']['h1'];
     }
 }
 
@@ -491,30 +752,7 @@ function description($description = '')
     }
 }
 
-function setMeta($meta)
-{
-    title($meta['title']);
-    description($meta['description']);
-    $GLOBALS['GRAPHENE_RENDER']['meta'] = $meta;
-}
-
-function meta($key)
-{
-    return $GLOBALS['GRAPHENE_RENDER']['meta'][$key];
-}
-
-function controller($do)
-{
-    $res = $do();
-
-    return $res;
-}
-
 function import($src)
 {
     $GLOBALS['GRAPHENE_RENDER']['import'][md5($src)] = $src;
 }
-
-$app = new GrapheneRender();
-
-$app->render();
