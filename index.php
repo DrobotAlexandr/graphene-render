@@ -725,6 +725,11 @@ function setMeta($meta)
     $GLOBALS['GRAPHENE_RENDER']['meta'] = $meta;
 }
 
+function meta($key)
+{
+    return $GLOBALS['GRAPHENE_RENDER']['meta'][$key];
+}
+
 function title($title = false)
 {
     if ($title) {
