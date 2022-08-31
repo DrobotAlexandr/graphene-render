@@ -759,5 +759,16 @@ function description($description = '')
 
 function import($src)
 {
+
+    if (strstr($src . '--', '.php--')) {
+
+        if (strstr('--' . $src, '--/')) {
+            $src = $_SERVER['DOCUMENT_ROOT'] . '/' . $src;
+        }
+
+        include $src;
+        return true;
+    }
+
     $GLOBALS['GRAPHENE_RENDER']['import'][md5($src)] = $src;
 }
