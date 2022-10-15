@@ -60,6 +60,11 @@ return [
         'url' => '/contacts',
         'name' => 'Контакты',
         'code' => 'Contacts',
+    ],
+    [
+        'url' => '/404',
+        'name' => 'Ошибка 404',
+        'code' => 'NotFound',
     ]
 ];");
 
@@ -304,6 +309,10 @@ class GrapheneRender
             return false;
         }
 
+        if ($this->isLocal()) {
+            return false;
+        }
+
         $cacheKey = $this->getCacheKey();
 
         $pageCacheFile = $_SERVER['DOCUMENT_ROOT'] . '/graphene-render/cache/pages/' . $cacheKey . '.php';
@@ -312,6 +321,16 @@ class GrapheneRender
             include $pageCacheFile;
             exit(PHP_EOL . PHP_EOL . PHP_EOL . '<!-- graphene-static : ' . $cacheKey . ' -->');
         }
+    }
+
+    private function isLocal()
+    {
+
+        if (strstr($_SERVER['REQUEST_URI'], '.loc')) {
+            return true;
+        }
+        return false;
+
     }
 
     private function setHtmlCacheKey()
@@ -571,6 +590,37 @@ defined(\'GRAPHENE_RENDER\') or die;
             }
         }
 
+        if (!$dataRoute) {
+            foreach ($routes as $route) {
+
+                $vars = [];
+
+                if (substr_count(rtrim($url, '/'), '/') == substr_count(rtrim($route['url'], '/'), '/')) {
+
+                    $dataUrl = explode('/', $url);
+                    $dataRouteUrl = explode('/', $route['url']);
+                    $dataRouteUrlCompile = $route['url'];
+
+                    foreach ($dataRouteUrl as $k => $dataRoutePath) {
+
+                        if (strstr($dataRoutePath, ':')) {
+
+                            $dataRouteUrlCompile = strtr($dataRouteUrlCompile, [$dataRoutePath => $dataUrl[$k]]);
+
+                            $vars[strtr($dataRoutePath, [':' => ''])] = $dataUrl[$k];
+
+                        }
+                    }
+
+                    if ($dataRouteUrlCompile == $url) {
+                        $dataRoute = $route;
+                        $dataRoute['vars'] = $vars;
+                    }
+                }
+            }
+
+        }
+
         $pageSrc = '/graphene-render/pages/' . $dataRoute['code'] . '/';
 
         $dataRoute['page'] = [
@@ -658,7 +708,7 @@ if(window.location.search)
 fetch(new Request(reStaticUrl, {method: 'GRAPHENE-RE-STATIC'})).then(data => {
         
     data.text().then(version => { 
-        if(pageVersion !== version){
+        if(pageVersion !== version && version.length === 32){
            window.location.href='';
         }
     });
