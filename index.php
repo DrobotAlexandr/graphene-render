@@ -274,6 +274,8 @@ class GrapheneRender
 
         $this->route = $this->getRoute($routes);
 
+        $this->setRoute();
+
         $this->pageHtml = $this->renderPageHtml();
 
         $this->viewHtml = $this->renderView();
@@ -561,6 +563,11 @@ defined(\'GRAPHENE_RENDER\') or die;
 
     }
 
+    private function setRoute()
+    {
+        $GLOBALS['__route'] = $this->route;
+    }
+
     private function renderPageHtml()
     {
 
@@ -614,7 +621,7 @@ defined(\'GRAPHENE_RENDER\') or die;
 
                     if ($dataRouteUrlCompile == $url) {
                         $dataRoute = $route;
-                        $dataRoute['vars'] = $vars;
+                        $dataRoute['variables'] = $vars;
                     }
                 }
             }
@@ -821,4 +828,9 @@ function import($src)
     }
 
     $GLOBALS['GRAPHENE_RENDER']['import'][md5($src)] = $src;
+}
+
+function getRoute()
+{
+    return $GLOBALS['__route'];
 }
