@@ -40,26 +40,45 @@ return [
         'url' => '/',
         'name' => 'Главная',
         'code' => 'Main',
+        'params' => [
+            'showInTopMenu' => true,
+            'preRender' => true,
+        ]
     ],
     [
         'url' => '/about',
         'name' => 'О нас',
         'code' => 'About',
+        'params' => [
+            'showInTopMenu' => true,
+            'preRender' => true,
+        ]
     ],
     [
         'url' => '/news',
         'name' => 'Новости',
         'code' => 'News',
+        'params' => [
+            'showInTopMenu' => true,
+            'preRender' => true,
+        ]
     ],
     [
         'url' => '/news/:code',
         'name' => 'Новости',
         'code' => 'NewsDetail',
+        'params' => [
+            'preRender' => true,
+        ]
     ],
     [
         'url' => '/contacts',
         'name' => 'Контакты',
         'code' => 'Contacts',
+        'params' => [
+            'showInTopMenu' => true,
+            'preRender' => true,
+        ]
     ],
     [
         'url' => '/404',
@@ -349,6 +368,12 @@ class GrapheneRender
 
     public function saveHtmlCache()
     {
+
+        $route = getRoute();
+
+        if (!$route['params']['preRender']) {
+            exit($this->pageVersion);
+        }
 
         if ($this->pageRequestVersion() == $this->pageVersion) {
             exit($this->pageVersion);
@@ -726,7 +751,7 @@ fetch(new Request(reStaticUrl, {method: 'GRAPHENE-RE-STATIC'})).then(data => {
 }
 
 /*
- * Дра работы внутри приложения graphene-render,
+ * Для работы внутри приложения graphene-render,
  * при разработке используются функции описанные ниже
  */
 
@@ -745,7 +770,7 @@ function topMenu()
 
     foreach ($routes as $route) {
 
-        if (strstr($route['url'], ':')) {
+        if (strstr($route['url'], ':') or !$route['params']['showInTopMenu']) {
             continue;
         }
 
