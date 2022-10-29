@@ -30,6 +30,7 @@ $app->saveHtmlCache();
 
 if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/')) {
     mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/');
+    mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/components/');
     file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/gitignore', '.idea
 graphene-render/cache
 ');
@@ -186,15 +187,12 @@ import(\'/basic-view/App.js\');
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/img/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/img/');
     }
-
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/');
     }
-
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/reset/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/reset/');
     }
-
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/reset/reset.css')) {
         file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/resources/extensions/reset/reset.css', 'html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
@@ -248,7 +246,6 @@ table {
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/resources/css/')) {
         mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/resources/css/');
     }
-
 
     $installFile = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/index.php');
 
@@ -402,6 +399,10 @@ defined(\'GRAPHENE_RENDER\') or die;
     private function optimizeHtml()
     {
         $html = $this->viewHtml;
+
+        if (strstr($html, '<pre')) {
+            return false;
+        }
 
         $this->viewHtml = '';
 
@@ -757,7 +758,10 @@ fetch(new Request(reStaticUrl, {method: 'GRAPHENE-RE-STATIC'})).then(data => {
 
 function controller($do)
 {
-    $res = $do();
+
+    $props = $GLOBALS['GRAPHENE_RENDER']['componentProps'];
+
+    $res = $do($props);
 
     return $res;
 }
@@ -858,4 +862,101 @@ function import($src)
 function getRoute()
 {
     return $GLOBALS['__route'];
+}
+
+function component($path, $props = [])
+{
+    if (!$path) {
+        return false;
+    }
+
+    $src = $_SERVER['DOCUMENT_ROOT'] . '/graphene-render/components/';
+
+    if (!file_exists($src)) {
+
+        mkdir($src);
+
+    }
+
+    $component = '';
+    $srcPath = '';
+    foreach (explode('/', $path) as $path) {
+        $src = $src . strtr($path, ['.php' => '']) . '/';
+        if (!file_exists($src)) {
+            mkdir($src);
+        }
+        $component = $path;
+
+        $srcPath .= $path . '/';
+    }
+
+    $componentName = 'component-' . $component;
+    $componentFileName = $component;
+
+    $component = [
+        'resources' => $src . '/resources/',
+        'img' => $src . '/resources/img/',
+        'css' => $src . '/' . $component . '.css',
+        'js' => $src . '/' . $component . '.js',
+        'path' => $src . '/' . $component . '.php'
+    ];
+
+    if (!file_exists($component['resources'])) {
+        mkdir($component['resources']);
+    }
+
+    if (!file_exists($component['img'])) {
+        mkdir($component['img']);
+    }
+
+    if (!file_exists($component['css'])) {
+        file_put_contents($component['css'], ".$componentName {}");
+    }
+
+    if (!file_exists($component['js'])) {
+        file_put_contents($component['js'], 'let ' . $componentFileName . 'Component' . ' = {
+
+    init: function () {
+
+    }
+
+}
+
+document.addEventListener(\'DOMContentLoaded\', function () {
+
+    ' . $componentFileName . 'Component' . '.init();
+
+});');
+    }
+
+    if (!file_exists($component['path'])) {
+        file_put_contents($component['path'], '<?php
+defined(\'GRAPHENE_RENDER\') or die;
+
+import(\'/components/' . $srcPath . $componentFileName . '.css\');
+import(\'/components/' . $srcPath . $componentFileName . '.js\');
+
+$data = controller(function ($props) {
+
+    return [];
+
+});
+
+
+?>
+
+<div class="' . $componentName . '">
+
+</div>
+
+        ');
+    }
+
+    unset($src);
+
+    $GLOBALS['GRAPHENE_RENDER']['componentProps'] = $props;
+
+    include $component['path'];
+
+
 }
