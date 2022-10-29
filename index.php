@@ -956,7 +956,12 @@ $data = controller(function ($props) {
 
     $GLOBALS['GRAPHENE_RENDER']['componentProps'] = $props;
 
+    ob_start();
     include $component['path'];
+    $html = ob_get_contents();
+    ob_end_clean();
+
+    return $html;
 
 
 }
