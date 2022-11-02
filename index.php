@@ -290,6 +290,8 @@ class GrapheneRender
 
         $this->route = $this->getRoute($routes);
 
+        $this->setPageStatus();
+
         $this->setRoute();
 
         $this->pageHtml = $this->renderPageHtml();
@@ -306,6 +308,17 @@ class GrapheneRender
             echo $this->viewHtml;
         }
 
+    }
+
+    private function setPageStatus()
+    {
+        if ($this->route['code'] == 'NotFound') {
+            if ($_GET['status'] != 404) {
+                header("HTTP/1.0 404 Not Found");
+            }
+        } else {
+            header('Content-type: text/html; charset=utf-8');
+        }
     }
 
     private function checkReStaticRequest()
@@ -596,7 +609,6 @@ defined(\'GRAPHENE_RENDER\') or die;
 
     private function renderPageHtml()
     {
-
         if (!file_exists($this->route['page']['component'])) {
             return false;
         }
@@ -652,6 +664,15 @@ defined(\'GRAPHENE_RENDER\') or die;
                 }
             }
 
+        }
+
+        if (!$dataRoute) {
+            foreach ($routes as $route) {
+                if ($route['code'] == 'NotFound') {
+                    $dataRoute = $route;
+                    break;
+                }
+            }
         }
 
         $pageSrc = '/graphene-render/pages/' . $dataRoute['code'] . '/';
@@ -962,6 +983,12 @@ $data = controller(function ($props) {
     ob_end_clean();
 
     return $html;
+}
 
-
+function notFount()
+{
+    header("HTTP/1.0 404 Not Found");
+    exit(
+    @file_get_contents('http://' . $_SERVER['SERVER_NAME'] . '/404?status=404')
+    );
 }
