@@ -474,8 +474,8 @@ defined(\'GRAPHENE_RENDER\') or die;
 
             $cacheKey = mb_strtolower($this->route['code']);
 
-            $appCssFile = '/graphene-render/cache/static/app.css';
-            $appJsFile = '/graphene-render/cache/static/app.js';
+            $appCssFile = '/graphene-render/cache/static/_app-' . $cacheKey . '.css';
+            $appJsFile = '/graphene-render/cache/static/_app-' . $cacheKey . '.js';
 
             $cssFile = '/graphene-render/cache/static/' . $cacheKey . '.css';
             $jsFile = '/graphene-render/cache/static/' . $cacheKey . '.js';
@@ -887,9 +887,12 @@ function getRoute()
 
 function component($path, $props = [])
 {
+
     if (!$path) {
         return false;
     }
+
+
 
     $src = $_SERVER['DOCUMENT_ROOT'] . '/graphene-render/components/';
 
