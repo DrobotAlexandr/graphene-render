@@ -35,7 +35,6 @@ if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/')) {
 graphene-render/cache
 ');
     file_put_contents('router.php', "<?php
-
 return [
     [
         'url' => '/',
@@ -94,7 +93,6 @@ return [
         file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/.htaccess', '
 RewriteEngine On
 RewriteBase /
-
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ index.php [L,QSA]');
@@ -112,30 +110,22 @@ RewriteRule ^(.*)$ index.php [L,QSA]');
 
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/App.js')) {
         file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/App.js', 'let App = {
-
     init: function () {
-
     }
-
 }
-
 document.addEventListener(\'DOMContentLoaded\', function () {
-
     App.init();
-
 });');
     }
 
     if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/App.php')) {
         file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/basic-view/App.php', '<?php
 defined(\'GRAPHENE_RENDER\') or die;
-
 import(\'/basic-view/resources/extensions/reset/reset.css\');
 import(\'/basic-view/resources/fonts/fonts.css\');
 import(\'/basic-view/resources/css/ui.css\');
 import(\'/basic-view/App.css\');
 import(\'/basic-view/App.js\');
-
 ?>
 <!doctype html>
 <html lang="ru">
@@ -147,7 +137,6 @@ import(\'/basic-view/App.js\');
 </head>
 <body>
 <div class="App">
-
     <nav>
         <?php foreach (topMenu() as $item) { ?>
             <a href="<?= $item[\'link\'] ?>">
@@ -155,12 +144,10 @@ import(\'/basic-view/App.js\');
             </a>
         <?php } ?>
     </nav>
-
     #content#
 </div>
 </body>
 </html>
-
 ');
     }
 
@@ -474,8 +461,8 @@ defined(\'GRAPHENE_RENDER\') or die;
 
             $cacheKey = mb_strtolower($this->route['code']);
 
-            $appCssFile = '/graphene-render/cache/static/_app-' . $cacheKey . '.css';
-            $appJsFile = '/graphene-render/cache/static/_app-' . $cacheKey . '.js';
+            $appCssFile = '/graphene-render/cache/static/app.css';
+            $appJsFile = '/graphene-render/cache/static/app.js';
 
             $cssFile = '/graphene-render/cache/static/' . $cacheKey . '.css';
             $jsFile = '/graphene-render/cache/static/' . $cacheKey . '.js';
@@ -495,7 +482,7 @@ defined(\'GRAPHENE_RENDER\') or die;
                 $src = strtr($src, ['--//' => '/']);
                 $src = strtr($src, ['--/' => '/']);
 
-                if (strstr($src, '/pages/')) {
+                if (strstr($src, '/pages/') OR strstr($src, '/components/')) {
                     $local[] = $src;
                 } else {
                     $global[] = $src;
@@ -699,12 +686,9 @@ defined(\'GRAPHENE_RENDER\') or die;
                 mkdir($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/pages/' . $route['code'] . '/resources/img/');
                 file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/pages/' . $route['code'] . '/' . $route['code'] . '.php', '<?php
 defined(\'GRAPHENE_RENDER\') or die;
-
 import(\'/pages/' . $route['code'] . '/' . $route['code'] . '.css\');
 import(\'/pages/' . $route['code'] . '/' . $route['code'] . '.js\');
-
 $data = controller(function () {
-
     setMeta(
         [
             \'title\' => \'' . $route['name'] . '\',
@@ -712,36 +696,23 @@ $data = controller(function () {
             \'h1\' => \'' . $route['name'] . '\',
         ]
     );
-
     return [];
-
 });
-
-
 ?>
-
 <?php extend(\'basic-view\'); ?>
-
 <div class="' . $route['code'] . '">
     <h1><?= h1() ?></h1>
 </div>
-
         ');
                 file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/pages/' . $route['code'] . '/' . $route['code'] . '.css', '.' . $route['code'] . ' {
                 
 }');
                 file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/graphene-render/pages/' . $route['code'] . '/' . $route['code'] . '.js', 'let ' . $route['code'] . ' = {
-
     init: function () {
-
     }
-
 }
-
 document.addEventListener(\'DOMContentLoaded\', function () {
-
     ' . $route['code'] . '.init();
-
 });');
             }
         }
@@ -751,7 +722,6 @@ document.addEventListener(\'DOMContentLoaded\', function () {
     {
 
         $js = "
-
 let reStaticUrl = '?version='+pageVersion;   
       
 if(window.location.search)
@@ -939,40 +909,25 @@ function component($path, $props = [])
 
     if (!file_exists($component['js'])) {
         file_put_contents($component['js'], 'let ' . $componentFileName . 'Component' . ' = {
-
     init: function () {
-
     }
-
 }
-
 document.addEventListener(\'DOMContentLoaded\', function () {
-
     ' . $componentFileName . 'Component' . '.init();
-
 });');
     }
 
     if (!file_exists($component['path'])) {
         file_put_contents($component['path'], '<?php
 defined(\'GRAPHENE_RENDER\') or die;
-
 import(\'/components/' . $srcPath . $componentFileName . '.css\');
 import(\'/components/' . $srcPath . $componentFileName . '.js\');
-
 $data = controller(function ($props) {
-
     return [];
-
 });
-
-
 ?>
-
 <div class="' . $componentName . '">
-
 </div>
-
         ');
     }
 
