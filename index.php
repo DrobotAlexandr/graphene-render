@@ -778,7 +778,8 @@ function topMenu()
         $arData[] = [
             'title' => $route['name'],
             'link' => $route['url'],
-            'isActive' => $isActive
+            'isActive' => $isActive,
+            'params' => $route['params']
         ];
     }
 
